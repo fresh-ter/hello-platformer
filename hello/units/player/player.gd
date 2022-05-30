@@ -16,6 +16,7 @@ var tripleJump = true
 var initialPosition
 var spawn = true
 var protection = true
+export (bool) var is_armed: bool = false
 
 signal finish
 
@@ -88,11 +89,21 @@ func _applyGravity() -> void:
 func _applyAnimation():
 	if is_on_floor():
 		if abs(velocity.x) > 2:
-			sprite.play("run_e")
+			if is_armed:
+				sprite.play("run_g")
+			else:
+				sprite.play("run_e")
 		else:
-			sprite.play("idle_e")
+			if is_armed:
+				sprite.play("idle_g")
+			else:
+				sprite.play("idle_e")
 	else:
-		sprite.play("jump_e")
+		if is_armed:
+			sprite.play("jump_g")
+		else:
+			sprite.play("jump_e")
+
 
 func _on_Area2D_body_entered(body: Node) -> void:
 	print("npc: ", body in get_tree().get_nodes_in_group('npc'))
