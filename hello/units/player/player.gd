@@ -9,20 +9,27 @@ var velocity = Vector2(0, 0)
 var movementVelocity = Vector2(0, 0)
 
 onready var sprite = $AnimatedSprite
+onready var shotSprite = $Shot
 
-var right_direction = true
+
 var doubleJump = true
 var tripleJump = true
 var initialPosition
 var spawn = true
 var protection = true
+var shotInitialPosition
+
+export (bool) var invert_direction = false setget set_invert_direction
 export (bool) var is_armed: bool = false
+
+onready var Bullet = preload("res://objects/bullet/bullet.tscn")
 
 signal finish
 
 
 func _ready():
 	initialPosition = position
+	shotInitialPosition = shotSprite.position
 
 func reset():
 	position = initialPosition
@@ -54,12 +61,12 @@ func _applyControls():
 	movementVelocity = Vector2(0, 0)
 	
 	if Input.is_action_pressed("left"):
+		self.invert_direction = true
 		movementVelocity.x = -movementSpeed
-		sprite.flip_h = true
 		
 	elif Input.is_action_pressed("right"):
+		self.invert_direction = false
 		movementVelocity.x = movementSpeed
-		sprite.flip_h = false
 	
 	if Input.is_action_just_pressed("jump"):
 		if is_on_floor():
@@ -74,6 +81,25 @@ func _applyControls():
 		elif tripleJump:
 			_jump()
 			tripleJump = false
+	
+	if Input.is_action_just_pressed("shoot") and is_armed:
+		_shoot()
+
+
+func _shoot() -> void:
+	shotSprite.frame = 0
+	shotSprite.play("shot")
+	
+	var bullet = Bullet.instance()
+	get_tree().get_root().add_child(bullet)
+	
+	if self.invert_direction:
+		bullet.position = position + Vector2(-8, 2)
+	else:
+		bullet.position = position + Vector2(8, 2)
+		
+	bullet.invert_direction = self.invert_direction
+	bullet.shot()
 
 
 func _jump() -> void:
@@ -103,6 +129,19 @@ func _applyAnimation():
 			sprite.play("jump_g")
 		else:
 			sprite.play("jump_e")
+
+
+func set_invert_direction(value) -> void:
+	if value:
+		sprite.flip_h = true
+		shotSprite.flip_h = true
+		shotSprite.position = shotInitialPosition * Vector2(-1,1)
+	else:
+		sprite.flip_h = false
+		shotSprite.flip_h = false
+		shotSprite.position = shotInitialPosition
+	
+	invert_direction = value
 
 
 func _on_Area2D_body_entered(body: Node) -> void:
